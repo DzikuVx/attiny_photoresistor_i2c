@@ -2,7 +2,7 @@
 
 Photoresistor connected by I2C using ATtiny85
 
-!(diagram)[attiny_photoresistor_i2c.png]
+![diagram](attiny_photoresistor_i2c.png)
 
 This example shows how to build analog to digital converter using ATtiny85 and connect it to any device (Raspberry Pi, Arduino) using I2C bus. Here photoresistor has been used, but any analog meter will be fine: temperature, potentiometer, moisture...
 
