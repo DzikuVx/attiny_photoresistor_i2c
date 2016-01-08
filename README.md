@@ -37,6 +37,6 @@ Serial.print(readout);
 * # Notes
 
 * Arduino IDE 1.6.6. Should work on older releases, but never tested
-* Uses TinyWireS library. Get it using Library Manager of (GitHub directly)[https://github.com/rambo/TinyWire/tree/master/TinyWireS]
+* Uses TinyWireS library. Get it using Library Manager of [GitHub directly](https://github.com/rambo/TinyWire/tree/master/TinyWireS)
 * ATtiny45/85 board definitions. Tested with [damellis/attiny](https://github.com/damellis/attiny)
 * Uses 1MHz internal osciallator 
