@@ -3,6 +3,18 @@
  */
 #define I2C_SLAVE_ADDRESS 0x13
 
+/*
+ * How often measurement should be executed
+ * One tick is more less 0.5s, so 1 minute is 120 ticks
+ * This executes measurements every 2 minutes, so 120s, 120000 ms
+ */
+#define MAX_TICK 120000
+
+#define STATUS_PIN_1 4
+#define ADC_PIN A3
+
+#define LPF_FACTOR 0.5
+
 #include <TinyWireS.h>
 #include <avr/sleep.h>
 #include <avr/wdt.h>
@@ -10,9 +22,6 @@
 #ifndef TWI_RX_BUFFER_SIZE
 #define TWI_RX_BUFFER_SIZE ( 16 )
 #endif
-
-#define STATUS_PIN_1 4
-#define ADC_PIN A3
 
 volatile uint8_t i2c_regs[] =
 {
@@ -71,13 +80,6 @@ volatile unsigned int lightMeter;
  */
 void requestEvent()
 {  
-  
-  if (reg_position == 0) {
-    lightMeter = analogRead(ADC_PIN);
-    i2c_regs[0] = lightMeter >> 8;
-    i2c_regs[1] = lightMeter & 0xFF;
-  }
-  
   TinyWireS.send(i2c_regs[reg_position]);
 
   reg_position++;
@@ -85,7 +87,6 @@ void requestEvent()
   {
       reg_position = 0;
   }
-  digitalWrite(STATUS_PIN_1, HIGH);
 }
 
 void setup() {
@@ -104,12 +105,46 @@ void setup() {
   /*
    * Start watchdog timer
    */
-  setup_watchdog(5);
+  setup_watchdog(6);
+}
+
+unsigned int tick = 0;
+unsigned long lastReadout = 0;
+
+int smooth(int data, float filterVal, float smoothedVal){
+
+  if (filterVal > 1){      // check to make sure params are within range
+    filterVal = .99;
+  }
+  else if (filterVal <= 0){
+    filterVal = 0;
+  }
+
+  smoothedVal = (data * (1 - filterVal)) + (smoothedVal  *  filterVal);
+
+  return (int)smoothedVal;
 }
 
 void loop() {
+
   set_sleep_mode(SLEEP_MODE_PWR_SAVE);
   sleep_enable();
   sleep_mode();
   sleep_disable(); 
+
+  unsigned long currentMillis = millis();
+  /*
+   * On tick value 0, do measurements
+   */
+  if (abs(currentMillis - lastReadout) > MAX_TICK) {
+    int raw_value = analogRead(ADC_PIN);
+
+    lightMeter = smooth(raw_value, LPF_FACTOR, lightMeter);
+    
+    i2c_regs[0] = lightMeter >> 8;
+    i2c_regs[1] = lightMeter & 0xFF;
+    
+    digitalWrite(STATUS_PIN_1, HIGH);
+    lastReadout = currentMillis;
+  }
 }
